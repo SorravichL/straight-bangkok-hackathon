@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Starter · OpenAI + ElevenLabs</title>
+<style>
+  :root {
+    --bg: #10100f;
+    --panel: #1a1a18;
+    --line: #2e2e2a;
+    --ink: #edeae2;
+    --dim: #8b8880;
+    --live: #b8e02c;
+    --warn: #e0642c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 20px 48px;
+    background: var(--bg); color: var(--ink);
+    font: 15px/1.55 ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  main { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 15px; font-weight: 600; letter-spacing: .02em; margin: 0 0 4px; }
+  .sub { color: var(--dim); font-size: 13px; margin: 0 0 24px; }
+  .status { display: flex; gap: 16px; font-size: 12px; color: var(--dim); margin-bottom: 24px; }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); margin-right: 6px; vertical-align: 1px; }
+  .dot.on { background: var(--live); }
+  textarea {
+    width: 100%; min-height: 88px; padding: 12px; resize: vertical;
+    background: var(--panel); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 6px;
+    font: inherit;
+  }
+  textarea:focus-visible, button:focus-visible { outline: 2px solid var(--live); outline-offset: 2px; }
+  .row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  button {
+    padding: 9px 16px; border-radius: 6px; cursor: pointer;
+    background: var(--live); color: #10100f; border: 0;
+    font: inherit; font-weight: 600;
+  }
+  button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .out {
+    margin-top: 20px; padding: 14px; min-height: 56px;
+    background: var(--panel); border: 1px solid var(--line);
+    border-left: 2px solid var(--live); border-radius: 6px;
+    white-space: pre-wrap;
+  }
+  .out.error { border-left-color: var(--warn); color: #f0b9a0; }
+  audio { width: 100%; margin-top: 12px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .out { transition: border-color .15s ease; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>starter kit</h1>
+  <p class="sub">พิมพ์ → OpenAI ตอบ → ElevenLabs อ่านออกเสียง</p>
+
+  <div class="status">
+    <span><span class="dot" id="d-openai"></span>OpenAI</span>
+    <span><span class="dot" id="d-eleven"></span>ElevenLabs</span>
+    <span id="model"></span>
+  </div>
+
+  <textarea id="input" placeholder="ลองพิมพ์อะไรสักอย่าง…">อธิบายว่า SLO ต่างจาก SLA ยังไง</textarea>
+
+  <div class="row">
+    <button id="run">ถามแล้วอ่านออกเสียง</button>
+    <button id="textonly" class="ghost">เอาแค่ข้อความ</button>
+  </div>
+
+  <div class="out" id="out">ผลลัพธ์จะขึ้นตรงนี้</div>
+  <audio id="player" controls hidden></audio>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const out = $("out"), player = $("player");
+
+function show(text, isError = false) {
+  out.textContent = text;
+  out.classList.toggle("error", isError);
+}
+
+fetch("/api/health").then(r => r.json()).then(h => {
+  $("d-openai").classList.toggle("on", h.openai);
+  $("d-eleven").classList.toggle("on", h.elevenlabs);
+  $("model").textContent = h.model;
+}).catch(() => show("เซิร์ฟเวอร์ไม่ตอบ ตรวจว่ารันอยู่หรือเปล่า", true));
+
+async function ask(withVoice) {
+  const message = $("input").value.trim();
+  if (!message) return show("ใส่ข้อความก่อน", true);
+
+  $("run").disabled = $("textonly").disabled = true;
+  player.hidden = true;
+  show("กำลังคิด…");
+
+  try {
+    const r = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || data.error);
+
+    show(data.reply);
+    if (withVoice) await speak(data.reply);
+  } catch (err) {
+    show(String(err.message || err), true);
+  } finally {
+    $("run").disabled = $("textonly").disabled = false;
+  }
+}
+
+async function speak(text) {
+  const r = await fetch("/api/speak", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  if (!r.ok) {
+    const data = await r.json().catch(() => ({}));
+    throw new Error(data.detail || data.error || "สร้างเสียงไม่สำเร็จ");
+  }
+  player.src = URL.createObjectURL(await r.blob());
+  player.hidden = false;
+  player.play().catch(() => {});
+}
+
+$("run").onclick = () => ask(true);
+$("textonly").onclick = () => ask(false);
+</script>
+</body>
+</html>
