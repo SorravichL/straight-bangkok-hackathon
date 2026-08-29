@@ -21,9 +21,11 @@ type CandlestickChartProps = {
   symbol: string;
 };
 
-const chartWidth = 680;
-const chartHeight = 272;
-const plot = { left: 52, right: 82, top: 22, bottom: 38 };
+// This matches the mobile chart panel's proportions, so the SVG can use its
+// full height without distorting candles, labels, or grid lines.
+const chartWidth = 360;
+const chartHeight = 200;
+const plot = { left: 36, right: 58, top: 22, bottom: 38 };
 
 const numberFormatter = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 2,
@@ -48,7 +50,8 @@ function getAxisStep(range: number) {
   const roughStep = range / 4;
   const magnitude = 10 ** Math.floor(Math.log10(Math.max(roughStep, 0.0001)));
   const normalised = roughStep / magnitude;
-  const multiplier = normalised <= 1 ? 1 : normalised <= 2 ? 2 : normalised <= 5 ? 5 : 10;
+  const multiplier =
+    normalised <= 1 ? 1 : normalised <= 2 ? 2 : normalised <= 5 ? 5 : 10;
   return multiplier * magnitude;
 }
 
@@ -62,7 +65,8 @@ export default function CandlestickChart({
   const model = useMemo(() => {
     const priceHigh = Math.max(...candles.map((candle) => candle.high));
     const priceLow = Math.min(...candles.map((candle) => candle.low));
-    const valueRange = priceHigh - priceLow || Math.max(Math.abs(priceHigh) * 0.02, 1);
+    const valueRange =
+      priceHigh - priceLow || Math.max(Math.abs(priceHigh) * 0.02, 1);
     const paddedHigh = priceHigh + valueRange * 0.12;
     const paddedLow = priceLow - valueRange * 0.12;
     const axisStep = getAxisStep(paddedHigh - paddedLow);
@@ -76,10 +80,11 @@ export default function CandlestickChart({
       plot.left + (index / Math.max(candles.length - 1, 1)) * drawableWidth;
     const candleWidth = Math.max(
       1,
-      Math.min(15, (drawableWidth / Math.max(candles.length, 1)) * 0.65)
+      Math.min(15, (drawableWidth / Math.max(candles.length, 1)) * 0.65),
     );
-    const gridValues = Array.from({ length: 5 }, (_, index) =>
-      axisLow + ((axisHigh - axisLow) * index) / 4
+    const gridValues = Array.from(
+      { length: 5 },
+      (_, index) => axisLow + ((axisHigh - axisLow) * index) / 4,
     );
     const highIndex = candles.findIndex((candle) => candle.high === priceHigh);
     const lowIndex = candles.findIndex((candle) => candle.low === priceLow);
@@ -106,7 +111,9 @@ export default function CandlestickChart({
   }
 
   const hoveredCandle =
-    hoveredIndex === null ? null : candles[Math.min(hoveredIndex, candles.length - 1)];
+    hoveredIndex === null
+      ? null
+      : candles[Math.min(hoveredIndex, candles.length - 1)];
   const highY = model.y(model.priceHigh);
   const lowY = model.y(model.priceLow);
   const earliest = candles[0];
@@ -117,7 +124,7 @@ export default function CandlestickChart({
     const viewBoxX = ((clientX - bounds.left) / bounds.width) * chartWidth;
     const progress = Math.max(
       0,
-      Math.min(1, (viewBoxX - plot.left) / model.drawableWidth)
+      Math.min(1, (viewBoxX - plot.left) / model.drawableWidth),
     );
     setHoveredIndex(Math.round(progress * Math.max(candles.length - 1, 0)));
   };
@@ -126,11 +133,12 @@ export default function CandlestickChart({
     <div className="relative h-full w-full overflow-hidden rounded-md bg-slate-950 text-white">
       <svg
         viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-        preserveAspectRatio="none"
         role="img"
         aria-label={`${symbol} candlestick chart`}
         className="block h-full w-full touch-none"
-        onMouseMove={(event) => selectCandleAtPointer(event.clientX, event.currentTarget)}
+        onMouseMove={(event) =>
+          selectCandleAtPointer(event.clientX, event.currentTarget)
+        }
         onMouseLeave={() => setHoveredIndex(null)}
         onTouchMove={(event) => {
           const touch = event.touches.item(0);
@@ -143,7 +151,12 @@ export default function CandlestickChart({
             <stop offset="100%" stopColor="#020617" />
           </linearGradient>
         </defs>
-        <rect width={chartWidth} height={chartHeight} fill="url(#chart-background)" rx="8" />
+        <rect
+          width={chartWidth}
+          height={chartHeight}
+          fill="url(#chart-background)"
+          rx="8"
+        />
 
         {model.gridValues.map((value) => {
           const y = model.y(value);
@@ -200,7 +213,12 @@ export default function CandlestickChart({
           const bodyHeight = Math.max(1.5, bodyBottom - bodyTop);
 
           return (
-            <g key={`${candle.date.toISOString()}-${index}`} opacity={hoveredIndex === null || hoveredIndex === index ? 1 : 0.55}>
+            <g
+              key={`${candle.date.toISOString()}-${index}`}
+              opacity={
+                hoveredIndex === null || hoveredIndex === index ? 1 : 0.55
+              }
+            >
               <line
                 x1={x}
                 x2={x}
@@ -268,7 +286,16 @@ export default function CandlestickChart({
 
       <div className="pointer-events-none absolute left-3 top-2 rounded bg-slate-900/90 px-2 py-1 text-[11px] font-medium text-slate-200 shadow-sm">
         {symbol}
+        {hoveredCandle && (
+          <>
+            <div className="font-semibold">
+              {tooltipDateFormatter.format(hoveredCandle.date)}
+            </div>
+            <div>{formatChartPrice(hoveredCandle.close)}</div>
+          </>
+        )}
       </div>
+
       <div className="pointer-events-none absolute bottom-8 left-3 flex gap-2 text-[10px] font-semibold">
         <span className="rounded bg-amber-300/15 px-1.5 py-0.5 text-amber-300">
           High {formatChartPrice(model.priceHigh)}
@@ -277,13 +304,6 @@ export default function CandlestickChart({
           Low {formatChartPrice(model.priceLow)}
         </span>
       </div>
-      {hoveredCandle && (
-        <div className="pointer-events-none absolute right-2 top-2 rounded bg-slate-900/95 px-2 py-1 text-right text-[10px] leading-4 text-slate-200 shadow-sm">
-          <div className="font-semibold">{tooltipDateFormatter.format(hoveredCandle.date)}</div>
-          {/* <div>O {formatChartPrice(hoveredCandle.open)} · H {formatChartPrice(hoveredCandle.high)}</div>
-          <div>L {formatChartPrice(hoveredCandle.low)} · C {formatChartPrice(hoveredCandle.close)}</div> */}
-        </div>
-      )}
     </div>
   );
 }
@@ -319,7 +339,7 @@ function parseDate(value: string) {
     return new Date(
       Number(mmDdYyyy[3]),
       Number(mmDdYyyy[1]) - 1,
-      Number(mmDdYyyy[2])
+      Number(mmDdYyyy[2]),
     );
   }
 
@@ -338,10 +358,11 @@ export function parseChartCsv(csv: string): ChartDataset {
     .replace(/^\uFEFF/, "")
     .split(/\r?\n/)
     .filter((line) => line.trim());
-  if (rows.length < 2) throw new Error("The CSV needs a header and at least one data row.");
+  if (rows.length < 2)
+    throw new Error("The CSV needs a header and at least one data row.");
 
   const header = parseCsvLine(rows[0]).map((name) =>
-    name.toLowerCase().replace(/[\s_-]/g, "")
+    name.toLowerCase().replace(/[\s_-]/g, ""),
   );
   const findColumn = (...names: string[]) =>
     header.findIndex((column) => names.includes(column));
@@ -354,14 +375,18 @@ export function parseChartCsv(csv: string): ChartDataset {
     openColumn >= 0 && highColumn >= 0 && lowColumn >= 0 && closeColumn >= 0;
 
   if (dateColumn < 0 || closeColumn < 0) {
-    throw new Error("CSV must include Date plus Value/Close, or Date/Open/High/Low/Close columns.");
+    throw new Error(
+      "CSV must include Date plus Value/Close, or Date/Open/High/Low/Close columns.",
+    );
   }
 
   const rawRows = rows
     .slice(1)
     .map(parseCsvLine)
     .map((row) => ({ date: parseDate(row[dateColumn]), row }))
-    .filter((entry): entry is { date: Date; row: string[] } => entry.date !== null)
+    .filter(
+      (entry): entry is { date: Date; row: string[] } => entry.date !== null,
+    )
     .sort((first, second) => first.date.valueOf() - second.date.valueOf());
 
   const candles: Candle[] = [];
@@ -395,6 +420,7 @@ export function parseChartCsv(csv: string): ChartDataset {
     }
   }
 
-  if (!candles.length) throw new Error("No valid numeric chart rows were found in this CSV.");
+  if (!candles.length)
+    throw new Error("No valid numeric chart rows were found in this CSV.");
   return { candles, hasOhlc };
 }

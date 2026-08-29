@@ -2,7 +2,6 @@
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import CandlestickChart, {
   ChartDataset,
-  formatChartPrice,
   parseChartCsv,
 } from "../components/CandlestickChart";
 import TabBook from "../components/tabBook";
@@ -20,7 +19,6 @@ export default function InvestmentPage() {
   const [isHelp, setIsHelp] = useState<boolean>(false);
   const [chartRange, setChartRange] = useState<ChartRange>("all");
   const [chartData, setChartData] = useState<ChartDataset | null>(null);
-  const [chartFileName, setChartFileName] = useState("chart_20260829T050733.csv");
   const [chartError, setChartError] = useState<string | null>(null);
 
   const investments: Record<Category, any[]> = {
@@ -137,7 +135,6 @@ export default function InvestmentPage() {
     try {
       const data = parseChartCsv(await file.text());
       setChartData(data);
-      setChartFileName(file.name);
       setChartRange("all");
       setChartError(null);
     } catch (error) {
@@ -284,7 +281,7 @@ export default function InvestmentPage() {
             Import CSV
           </label> */}
         </div>
-        <div className="h-[260px] w-full">
+        <div className="w-full">
           {chartData ? (
             <CandlestickChart
               candles={periodCandles}
