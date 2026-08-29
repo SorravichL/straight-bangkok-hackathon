@@ -1,6 +1,15 @@
 "use client";
-import React, { useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import CandlestickChart, {
+  ChartDataset,
+  formatChartPrice,
+  parseChartCsv,
+} from "../components/CandlestickChart";
 import TabBook from "../components/tabBook";
+
+type ChartRange = "3m" | "6m" | "1yr" | "all";
+
+const DEFAULT_CHART_DATA = "/graph/chart_20260829T050733.csv";
 
 export default function InvestmentPage() {
   type Category = "Crypto" | "Stock" | "Government Bond" | "Lottery";
@@ -9,6 +18,10 @@ export default function InvestmentPage() {
   const [selectedInvestment, setSelectedInvestment] = useState<number>(0);
   const [isPop, setIsPop] = useState<boolean>(false);
   const [isHelp, setIsHelp] = useState<boolean>(false);
+  const [chartRange, setChartRange] = useState<ChartRange>("all");
+  const [chartData, setChartData] = useState<ChartDataset | null>(null);
+  const [chartFileName, setChartFileName] = useState("chart_20260829T050733.csv");
+  const [chartError, setChartError] = useState<string | null>(null);
 
   const investments: Record<Category, any[]> = {
     Crypto: [
@@ -79,6 +92,60 @@ export default function InvestmentPage() {
       },
     ],
   };
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function loadDefaultChart() {
+      try {
+        const response = await fetch(DEFAULT_CHART_DATA);
+        if (!response.ok) throw new Error("The bundled chart CSV could not be loaded.");
+        const data = parseChartCsv(await response.text());
+        if (isCurrent) setChartData(data);
+      } catch (error) {
+        if (isCurrent) {
+          setChartError(
+            error instanceof Error ? error.message : "The chart data could not be loaded."
+          );
+        }
+      }
+    }
+
+    void loadDefaultChart();
+    return () => {
+      isCurrent = false;
+    };
+  }, []);
+
+  const periodCandles = useMemo(() => {
+    if (!chartData) return [];
+    if (chartRange === "all") return chartData.candles;
+
+    const months = chartRange === "3m" ? 3 : chartRange === "6m" ? 6 : 12;
+    const lastDate = chartData.candles.at(-1)?.date;
+    if (!lastDate) return [];
+    const periodStart = new Date(lastDate);
+    periodStart.setMonth(periodStart.getMonth() - months);
+    return chartData.candles.filter((candle) => candle.date >= periodStart);
+  }, [chartData, chartRange]);
+
+  async function importChart(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      const data = parseChartCsv(await file.text());
+      setChartData(data);
+      setChartFileName(file.name);
+      setChartRange("all");
+      setChartError(null);
+    } catch (error) {
+      setChartError(
+        error instanceof Error ? error.message : "That CSV could not be imported."
+      );
+    }
+  }
 
   return (
     <div className="text-black p-3 flex flex-col items-center">
@@ -200,16 +267,35 @@ export default function InvestmentPage() {
         </div>
       </div>
 
-      <div className="relative bg-white p-2 rounded-lg mb-4 w-full mt-2 h-[200px] flex flex-col">
-        <p className="font-semibold absolute text-[#ffffff] mx-2 my-1">
-          {investments[selectedTab][selectedInvestment].symbol}
-        </p>
-        <div className="bg-black rounded flex items-center justify-center h-full w-full">
-          <img
-            src={investments[selectedTab][selectedInvestment].imageUrl}
-            alt="Invest Sign"
-            className="h-full w-full object-cover"
-          />
+      <div className="relative mb-4 mt-2 w-full rounded-lg bg-white p-2 shadow-sm">
+        <div className="mb-2 flex items-center justify-between gap-2 px-1">
+          {/* <div>
+            <p className="text-sm font-bold text-slate-900">
+              {investments[selectedTab][selectedInvestment].symbol}
+            </p>
+          </div>
+          <label className="cursor-pointer rounded-full border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100">
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              onChange={importChart}
+              className="sr-only"
+            />
+            Import CSV
+          </label> */}
+        </div>
+        <div className="h-[260px] w-full">
+          {chartData ? (
+            <CandlestickChart
+              candles={periodCandles}
+              hasOhlc={chartData.hasOhlc}
+              symbol={investments[selectedTab][selectedInvestment].symbol}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center rounded bg-slate-950 px-6 text-center text-sm text-slate-300">
+              {chartError ?? "Loading chart data…"}
+            </div>
+          )}
         </div>
       </div>
       <TabBook>
@@ -217,16 +303,36 @@ export default function InvestmentPage() {
           <div className="mb-4 grow-1 flex flex-col">
             <div className="flex space-x-2 mb-2 items-center text-sm">
               Range
-              <button className="bg-[#ffffff] ml-1 px-2 py-1 rounded-xl border-1">
+              <button
+                onClick={() => setChartRange("3m")}
+                className={`ml-1 rounded-xl border px-2 py-1 ${
+                  chartRange === "3m" ? "border-slate-900 bg-[#B6B885]" : "bg-white"
+                }`}
+              >
                 3m
               </button>
-              <button className="bg-[#ffffff] px-2 py-1 rounded-xl border-1">
+              <button
+                onClick={() => setChartRange("6m")}
+                className={`rounded-xl border px-2 py-1 ${
+                  chartRange === "6m" ? "border-slate-900 bg-[#B6B885]" : "bg-white"
+                }`}
+              >
                 6m
               </button>
-              <button className="bg-[#ffffff] px-2 py-1 rounded-xl border-1">
+              <button
+                onClick={() => setChartRange("1yr")}
+                className={`rounded-xl border px-2 py-1 ${
+                  chartRange === "1yr" ? "border-slate-900 bg-[#B6B885]" : "bg-white"
+                }`}
+              >
                 1yr
               </button>
-              <button className="bg-[#ffffff] px-2 py-1 rounded-xl border-1">
+              <button
+                onClick={() => setChartRange("all")}
+                className={`rounded-xl border px-2 py-1 ${
+                  chartRange === "all" ? "border-slate-900 bg-[#B6B885]" : "bg-white"
+                }`}
+              >
                 All Time
               </button>
             </div>
