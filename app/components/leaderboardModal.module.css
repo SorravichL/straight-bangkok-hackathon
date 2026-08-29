@@ -1,0 +1,189 @@
+/* Floating leaderboard, themed to match the dashboard. */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+}
+
+.window {
+  width: 100%;
+  max-width: 361px;
+  max-height: 78vh;
+  background-color: #25231f;
+  border: 2px solid black;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: white;
+}
+
+.titleBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background-color: var(--color-gold);
+  color: black;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.iconButton {
+  background-color: #fdf9d0;
+  border: 1px solid black;
+  border-radius: 9999px;
+  width: 26px;
+  height: 26px;
+  line-height: 1;
+  font-size: 15px;
+  font-weight: 700;
+  color: black;
+  cursor: pointer;
+}
+
+.sortRow {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #3a3833;
+}
+
+.sortChip {
+  flex: 1;
+  white-space: nowrap;
+  background-color: #3a3833;
+  color: #cfcbbf;
+  border-radius: 9999px;
+  padding: 0.2rem 0;
+  font-size: 13px;
+  cursor: pointer;
+  outline: 1px solid black;
+}
+
+.sortChipActive {
+  background-color: #fdf9d0;
+  color: black;
+  font-weight: 700;
+}
+
+/* The scrollable part. */
+.list {
+  overflow-y: auto;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 26px 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #33312c;
+  border-radius: 8px;
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  cursor: pointer;
+  outline: 1px solid #000;
+  color: white;
+}
+
+.row:hover {
+  background-color: #3f3d36;
+}
+
+.rowMe {
+  background-color: #4a5c31;
+}
+
+.rank {
+  font-size: 14px;
+  color: #cfcbbf;
+  text-align: center;
+}
+
+.name {
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini {
+  font-size: 11px;
+  color: #cfcbbf;
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1px;
+}
+
+.money {
+  font-size: 15px;
+  font-weight: 700;
+  color: #d8d8aa;
+  white-space: nowrap;
+}
+
+.empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #cfcbbf;
+  font-size: 14px;
+}
+
+/* Detail view */
+.detail {
+  overflow-y: auto;
+  padding: 0.75rem;
+}
+
+.detailName {
+  font-size: 24px;
+  text-align: center;
+  margin-bottom: 0.15rem;
+}
+
+.detailSub {
+  font-size: 12px;
+  color: #cfcbbf;
+  text-align: center;
+  margin-bottom: 0.75rem;
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #3a3833;
+}
+
+.statRow span:last-child {
+  color: #d8d8aa;
+  font-weight: 700;
+}
+
+.sectionTitle {
+  font-size: 13px;
+  color: #cfcbbf;
+  margin: 0.9rem 0 0.35rem;
+}
+
+.itemRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 0.3rem 0.5rem;
+  background-color: #33312c;
+  border-radius: 6px;
+  margin-bottom: 0.25rem;
+}

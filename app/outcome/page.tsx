@@ -8,14 +8,12 @@ import { useRouter } from "next/navigation";
 export default function YearReview() {
   const [year, setYear] = useState(32);
 
-  const { player, setPlayer } = useGame();
+  const { player, saveNow } = useGame();
   const router = useRouter();
-  function end() {
-    setPlayer((prev) => ({
-      ...prev,
-      // Increase money by `amount`
-      age: prev.age + 1,
-    }));
+  async function end() {
+    // Aging is the room clock's job now, so this only flushes pending stats
+    // before the leaderboard reads them.
+    await saveNow();
     router.push("/leaderboard");
   }
 

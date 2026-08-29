@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-// Import your JSON file
-import startData from "../data/startData.json";
 // Import your context
 import { useGame } from "../context/GameProvider";
 
@@ -12,16 +10,19 @@ import "./HomePage.css";
 
 export default function HomePage() {
   const router = useRouter();
-  const { player, setPlayer } = useGame();
+  const { joinGame } = useGame();
 
   // State for user’s typed username + server + error messages
   const [username, setUsername] = useState("");
   const [server, setServer] = useState("Please Select Server");
   const [error, setError] = useState("");
   const [serverError, setServerError] = useState("");
+  // Kept apart from `error` so a backend failure doesn't read as "bad username".
+  const [joinError, setJoinError] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
 
   // Called when the user clicks "PLAY"
-  const handlePlay = () => {
+  const handlePlay = async () => {
     // We use a flag to check if everything is valid before continuing
     let isValid = true;
 
@@ -45,16 +46,18 @@ export default function HomePage() {
     // If either check failed, do not continue
     if (!isValid) return;
 
-    // 3) Everything is valid -> initialize context with the user’s name + start data
-    setPlayer({
-      name: username,
-      money: startData.money,
-      happiness: startData.happiness,
-      knowledge: startData.knowledge,
-      occupation: startData.occupation,
-      age: startData.age,
-      cosmetics: startData.cosmetics
-    });
+    // 3) Everything is valid -> create the player in Supabase (or resume an
+    //    existing run for this name on this server) and load it into context.
+    setIsJoining(true);
+    setJoinError("");
+    try {
+      await joinGame(username, server);
+    } catch (err) {
+      setJoinError(err instanceof Error ? err.message : "Could not start the game");
+      return;
+    } finally {
+      setIsJoining(false);
+    }
 
     // 4) Go to the dashboard
     router.push("/dashboard");
@@ -100,9 +103,17 @@ export default function HomePage() {
       <button
         className="play-button px-4 py-2 rounded-lg mt-3"
         onClick={handlePlay}
+        disabled={isJoining}
       >
-        PLAY
+        {isJoining ? "LOADING..." : "PLAY"}
       </button>
+
+      {/* Backend problems get their own line, below the button. */}
+      {joinError && (
+        <div className="error-message text-red-400 text-xs mt-3 px-4 text-center">
+          {joinError}
+        </div>
+      )}
     </div>
   );
 }

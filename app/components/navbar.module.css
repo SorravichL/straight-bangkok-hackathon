@@ -71,3 +71,39 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   outline: 1px solid black;
 }
+
+/* Wrapper so the alert dot can sit on the button's corner. */
+.buttonWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Red "!" telling the player a new year landed and ⌛ points are waiting. */
+.alertDot {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 9999px;
+  background-color: #e5484d;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  outline: 1px solid black;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  animation: alertPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes alertPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.18); }
+}
+
+/* Respect people who don't want motion. */
+@media (prefers-reduced-motion: reduce) {
+  .alertDot { animation: none; }
+}

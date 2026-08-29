@@ -1,108 +1,141 @@
 "use client";
 import styles from "./action.module.css";
 import ActionCard from "./../components/ActionCard";
-import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useGame } from "../context/GameProvider";
+import { ACTION_CARDS, actionCost, actionValue } from "@/app/lib/actions";
+import { findJob, money } from "@/app/lib/jobs";
+import JobPanel from "@/app/components/JobPanel";
 
-type ActionProps = {
-  icon: string; // emoji for the action (e.g. 📚)
-  value: string; // stat value (e.g. 🎓 +2)
-  cost: string; // cost from action (e.g. $ 10K)
-  goal: number; // 🎯 value
-  clicked: boolean; // 🎯 value
-};
-
-const actionCards: Record<string, ActionProps> = {
-  Study: {
-    icon: "📚",
-    value: "🎓 +2",
-    cost: "",
-    goal: 2,
-    clicked: false,
-  },
-  Tutor: {
-    icon: "👩‍🏫",
-    value: "🎓 +1",
-    cost: "$10K",
-    goal: 1,
-    clicked: false,
-  },
-  Working: {
-    icon: "💼",
-    value: "$150K",
-    cost: "",
-    goal: 2,
-    clicked: false,
-  },
-  Overtime: {
-    icon: "🕒",
-    value: "$75K",
-    cost: "😊 -40",
-    goal: 1,
-    clicked: false,
-  },
-  "Find Career": {
-    icon: "🔎",
-    value: "4 jobs offer",
-    cost: "",
-    goal: 1,
-    clicked: false,
-  },
-  Travel: {
-    icon: "✈️",
-    value: "😊 +200",
-    cost: "$20K",
-    goal: 1,
-    clicked: false,
-  },
-};
+/** mm:ss until the whole room turns a year older. */
+function formatCountdown(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
 
 export default function Action() {
-  const [sumAction, setSumAction] = useState<number>(0);
+  const { player, maxPoints, secondsToNextTick, takeAction, takeJob, markActionsSeen } = useGame();
 
-  function ReceiveOnClick(a: string) {
-    actionCards[a].clicked = !actionCards[a].clicked;
-    let sum = Object.values(actionCards).reduce(
-      (count, card) => count + (card.clicked ? card.goal : 0),
-      0
-    );
-    if (sum > 3) actionCards[a].clicked = !actionCards[a].clicked;
-    setSumAction(
-      Object.values(actionCards).reduce(
-        (count, card) => count + (card.clicked ? card.goal : 0),
-        0
-      )
-    );
+  const [busy, setBusy] = useState<string | null>(null);
+  const [flash, setFlash] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  const [showJobs, setShowJobs] = useState(false);
+
+  // Opening this page is the acknowledgement — drop the navbar's red "!".
+  useEffect(() => {
+    markActionsSeen();
+  }, [markActionsSeen]);
+
+  useEffect(() => {
+    if (!flash) return;
+    const timer = setTimeout(() => setFlash(null), 3000);
+    return () => clearTimeout(timer);
+  }, [flash]);
+
+  /** One click = one trade of ⌛ time for something else. */
+  async function take(name: string) {
+    if (busy) return;
+    setError("");
+
+    // Viewing jobs is free — it only opens the panel.
+    if (ACTION_CARDS[name].opensCareers) {
+      setShowJobs((open) => !open);
+      return;
+    }
+
+    // Any other action closes the job panel.
+    setShowJobs(false);
+    setBusy(name);
+    try {
+      const effects = await takeAction(name);
+      const parts: string[] = [];
+      if (effects.knowledge) parts.push(`🎓 +${effects.knowledge}`);
+      if (effects.happiness) parts.push(`😄 ${effects.happiness > 0 ? "+" : ""}${effects.happiness}`);
+      if (effects.money) parts.push(money(effects.money));
+      setFlash(`${name} → ${parts.join("   ")}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not take that action");
+    } finally {
+      setBusy(null);
+    }
   }
+
+  async function accept(title: string) {
+    if (busy) return;
+    setBusy(title);
+    setError("");
+    try {
+      await takeJob(title);
+      setFlash(`You are now a ${title}`);
+      setShowJobs(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not take that job");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const currentJob = findJob(player.occupation);
 
   return (
     <div>
       <div className={styles.head}>
         <div className={styles.topic}>Action</div>
-        <div className={styles.topic}>⌛️4/9</div>
+        {/* The room's shared clock — everyone ages when this hits 0. */}
+        <div className={styles.topic}>⌛️ {formatCountdown(secondsToNextTick)}</div>
       </div>
-      <div className={styles.middle_container}>
-        <div className={styles.header}>
-          <h2 className={styles.status_bar}>Age 32</h2>
-          <span className={styles.status_bar}>🎯 {sumAction}/3</span>
 
-          {Object.entries(actionCards).map(([key, value], index) => (
+      <div className={styles.middle_container}>
+        {/* Age · job · time, on one line above the cards. */}
+        <div className={styles.statusRow}>
+          <span className={styles.status_bar}>Age {player.age}</span>
+          <span className={styles.jobBar} title={currentJob.title}>
+            💼 {currentJob.title}
+          </span>
+          <span className={styles.status_bar}>
+            ⌛️ {player.points}/{maxPoints}
+          </span>
+        </div>
+
+        <div className={styles.header}>
+          {Object.entries(ACTION_CARDS).map(([title, card]) => (
             <ActionCard
-              key={key}
-              sendOnClick={ReceiveOnClick}
-              icon={value.icon}
-              title={key}
-              value={value.value}
-              cost={value.cost}
-              goal={value.goal}
-              cards={actionCards}
+              key={title}
+              title={title}
+              icon={card.icon}
+              value={actionValue(title, player.occupation)}
+              cost={actionCost(title)}
+              goal={card.points}
+              busy={busy === title}
+              // "view job" opens for free; everything else needs the ⌛ up front.
+              label={card.opensCareers ? "view job" : undefined}
+              disabled={busy !== null || (!card.opensCareers && card.points > player.points)}
+              sendOnClick={take}
             />
           ))}
         </div>
-        <Link href="/event">
-          <button className={styles.age_button}>AGE</button>
-        </Link>
+
+        {flash && <div className="mt-3 text-center text-sm text-[#81B64C]">{flash}</div>}
+        {error && <div className="mt-3 text-center text-sm text-red-400">{error}</div>}
+
+        {player.points === 0 && !flash && !error && (
+          <div className="mt-3 text-center text-xs text-gray-400">
+            Out of ⌛ time. Next point in {formatCountdown(secondsToNextTick)}.
+          </div>
+        )}
       </div>
+
+      {showJobs && (
+        <JobPanel
+          knowledge={player.knowledge}
+          points={player.points}
+          currentTitle={currentJob.title}
+          busy={busy}
+          onAccept={accept}
+          onClose={() => setShowJobs(false)}
+        />
+      )}
     </div>
   );
 }
