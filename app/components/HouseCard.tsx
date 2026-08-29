@@ -50,6 +50,13 @@ export default function HouseCard({
   const [confirmMessage, setConfirmMessage] = useState("");
   const { player, setPlayer } = useGame();
 
+  // Calculate numeric prices to check affordability
+  const numericBuyPrice = parsePrice(price);
+  const numericRentPrice = parsePrice(rentPrice);
+
+  const canBuy = player.money >= numericBuyPrice;
+  const canRent = player.money >= numericRentPrice;
+
   function pay(amount: number) {
     setPlayer((prev) => ({
       ...prev,
@@ -68,7 +75,7 @@ export default function HouseCard({
     setConfirmHeader("Asset Bought");
     setConfirmMessage(`You've bought ${title} for ${price}`);
     setShowConfirmation(true);
-    pay(parsePrice(price));
+    pay(numericBuyPrice);
   };
 
   // Handler for user clicking Rent
@@ -77,7 +84,7 @@ export default function HouseCard({
     setConfirmHeader("Asset Rented");
     setConfirmMessage(`You've rented ${title} for ${rentPrice}`);
     setShowConfirmation(true);
-    pay(parsePrice(rentPrice));
+    pay(numericRentPrice);
   };
 
   return (
@@ -130,24 +137,31 @@ export default function HouseCard({
             </div>
 
             <div className="flex justify-center gap-3 mt-2">
-              <button
-                className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-4 rounded-md transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation(); // so clicking doesn't close overlay
-                  handleBuy();
-                }}
-              >
-                Buy
-              </button>
-              <button
-                className="bg-amber-400 hover:bg-amber-500 text-black py-1 px-4 rounded-md transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRent();
-                }}
-              >
-                Rent
-              </button>
+              {canBuy && (
+                <button
+                  className="bg-blue-500 hover:bg-blue-600 text-white py-1 px-4 rounded-md transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation(); // so clicking doesn't close overlay
+                    handleBuy();
+                  }}
+                >
+                  Buy
+                </button>
+              )}
+              {canRent && (
+                <button
+                  className="bg-amber-400 hover:bg-amber-500 text-black py-1 px-4 rounded-md transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRent();
+                  }}
+                >
+                  Rent
+                </button>
+              )}
+              {!canBuy && !canRent && (
+                <span className="text-red-500 text-sm font-semibold">Not enough money</span>
+              )}
             </div>
 
             <button
