@@ -10,7 +10,7 @@ export default function NavBar({ children }: { children: React.ReactNode }) {
   const isDashboard = pathname.startsWith("/dashboard");
   const isHomePage = pathname == "/";
 
-  const { player, formatLargeNumber } = useGame();
+  const { player, formatLargeNumber, hasUnspentTick } = useGame();
 
   const navLinks = [
     { label: "Port", href: "/dashboard" },
@@ -20,18 +20,30 @@ export default function NavBar({ children }: { children: React.ReactNode }) {
     { label: "Action", href: "/action" },
   ];
 
+  const bottomBar = (
+    <div className={styles.bottomBar}>
+      {navLinks.map(({ label, href }) => (
+        <Link key={label} href={href} passHref>
+          <span className={styles.buttonWrap}>
+            <button className={styles.button}>{label}</button>
+            {/* A year has passed and ⌛ points are waiting to be spent. */}
+            {label === "Action" && hasUnspentTick && (
+              <span className={styles.alertDot} aria-label="New year — actions available">
+                !
+              </span>
+            )}
+          </span>
+        </Link>
+      ))}
+    </div>
+  );
+
   if (isDashboard) {
     return (
       <div className={styles.container}>
         <div className={styles.inner}>
           <div className={styles.content}>{children}</div>
-          <div className={styles.bottomBar}>
-            {navLinks.map(({ label, href }) => (
-              <Link key={label} href={href} passHref>
-                <button className={styles.button}>{label}</button>
-              </Link>
-            ))}
-          </div>
+          {bottomBar}
         </div>
       </div>
     );
@@ -68,13 +80,7 @@ export default function NavBar({ children }: { children: React.ReactNode }) {
         <div className={styles.content}>{children}</div>
 
         {/* Bottom Bar */}
-        <div className={styles.bottomBar}>
-          {navLinks.map(({ label, href }) => (
-            <Link key={label} href={href} passHref>
-              <button className={styles.button}>{label}</button>
-            </Link>
-          ))}
-        </div>
+        {bottomBar}
       </div>
     </div>
   );

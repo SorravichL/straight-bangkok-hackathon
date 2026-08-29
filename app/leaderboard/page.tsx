@@ -1,61 +1,91 @@
 "use client";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./leaderboard.module.css";
+import { useGame } from "../context/GameProvider";
+import type { LeaderboardEntry, LeaderboardMetric } from "@/app/lib/game";
+import { fetchJson } from "@/app/lib/fetchJson";
 
-const data = [
-  { rank: 1, name: "Skibidi", money: "$102M" },
-  { rank: 2, name: "BrainRot", money: "$20M" },
-  { rank: 3, name: "SIER#8724", money: "$10.2M" },
-  { rank: 4, name: "Boom", money: "$4M" },
-  { rank: 5, name: "Sake", money: "$3.9M" },
-  { rank: 6, name: "Paimee", money: "$3.8M" },
-  { rank: 7, name: "Sun", money: "$3.7M" },
-  { rank: 8, name: "Friend", money: "$3.6M" },
-  { rank: 9, name: "XXX", money: "$2.5K" },
-  { rank: 10, name: "YYY", money: "$2.3K" },
-  { rank: 11, name: "ZZZ", money: "$540" },
-  { rank: 12, name: "Rizzler", money: "$345" },
-  { rank: 13, name: ".", money: "$25" },
-  { rank: 14, name: "Zapper", money: "$22" },
-  { rank: 15, name: "KoolAid", money: "$18" },
-  { rank: 16, name: "NovaKid", money: "$9" },
-  { rank: 17, name: "ByteStorm", money: "$7.5" },
-  { rank: 18, name: "Trinity", money: "$6" },
-  { rank: 19, name: "Omega", money: "$5.4" },
-  { rank: 20, name: "Flare", money: "$4.1" },
-  { rank: 21, name: "Duckling", money: "$3.3" },
-  { rank: 22, name: "Choco", money: "$2.1" },
-  { rank: 23, name: "Tiny", money: "$1.2" },
-  { rank: 24, name: "Chad", money: "$1" },
-  { rank: 25, name: "Loopy", money: "$0.7" },
-  { rank: 26, name: "QuietKid", money: "$0.5" },
+const TABS: { metric: LeaderboardMetric; icon: string }[] = [
+  { metric: "knowledge", icon: "🎓" },
+  { metric: "money", icon: "💵" },
+  { metric: "happiness", icon: "😄" },
 ];
 
 export default function LeaderboardPage() {
   const router = useRouter();
+  const { playerId, server, formatLargeNumber } = useGame();
+
+  const [metric, setMetric] = useState<LeaderboardMetric>("money");
+  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      setStatus("loading");
+      try {
+        const params = new URLSearchParams({ metric, limit: "25" });
+        // Rank against the server the player is actually on.
+        if (server) params.set("server", server);
+
+        const body = await fetchJson<{ entries: LeaderboardEntry[] }>(
+          `/api/leaderboard?${params}`
+        );
+        if (cancelled) return;
+
+        setEntries(body.entries);
+        setStatus("ready");
+      } catch (err) {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : "Could not load the leaderboard");
+        setStatus("error");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [metric, server]);
+
+  const formatScore = (score: number) =>
+    metric === "money" ? formatLargeNumber(score) : String(score);
+
   return (
     <div className={styles.container}>
       <div className={styles.title}>Leader board</div>
 
       <div className={styles.tabRow}>
-        <button className={styles.tab}>🎓</button>
-        <button className={`${styles.tab} ${styles.active}`}>💵</button>
-        <button className={styles.tab}>😄</button>
+        {TABS.map((tab) => (
+          <button
+            key={tab.metric}
+            className={`${styles.tab} ${metric === tab.metric ? styles.active : ""}`}
+            onClick={() => setMetric(tab.metric)}
+          >
+            {tab.icon}
+          </button>
+        ))}
       </div>
 
       <div className={styles.table}>
-        {data.map((item, i) => (
-          <div
-            key={item.rank}
-            className={`${styles.row} ${
-              item.rank === 3 ? styles.highlight : ""
-            }`}
-          >
-            <div className={styles.rank}>{item.rank}</div>
-            <div className={styles.name}>{item.name}</div>
-            <div className={styles.money}>{item.money}</div>
-          </div>
-        ))}
+        {status === "loading" && <div className={styles.row}>Loading…</div>}
+        {status === "error" && <div className={styles.row}>{error}</div>}
+        {status === "ready" && entries.length === 0 && (
+          <div className={styles.row}>No players yet — be the first!</div>
+        )}
+        {status === "ready" &&
+          entries.map((item) => (
+            <div
+              key={item.id}
+              className={`${styles.row} ${item.id === playerId ? styles.highlight : ""}`}
+            >
+              <div className={styles.rank}>{item.rank}</div>
+              <div className={styles.name}>{item.username}</div>
+              <div className={styles.money}>{formatScore(item.score)}</div>
+            </div>
+          ))}
       </div>
       <button
         className="mt-4 w-full  bg-[#81B64C] text-white py-2 rounded-lg"

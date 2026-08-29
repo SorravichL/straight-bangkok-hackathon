@@ -1,22 +1,16 @@
 // components/ActionCard.tsx
 import styles from "./actionCard.module.css";
 
-type ActionProps = {
-  icon: string; // emoji for the action (e.g. 📚)
-  value: string; // stat value (e.g. 🎓 +2)
-  cost: string; // cost from action (e.g. $ 10K)
-  goal: number; // 🎯 value
-  clicked: boolean; // 🎯 value
-};
-
 type ActionCardProps = {
   sendOnClick: (a: string) => void;
   icon: string; // emoji for the action (e.g. 📚)
   title: string; // action name (e.g. Study)
-  value: string; // stat value (e.g. 🎓 +2)
-  cost: string; // cost from action (e.g. $ 10K)
-  goal: number; // 🎯 value
-  cards: Record<string, ActionProps>;
+  value: string; // what you get (e.g. 🎓 +2)
+  cost: string; // what it costs on top of time (e.g. $10K)
+  goal: number; // ⌛️ points this action costs
+  busy: boolean; // this action is mid-request
+  disabled: boolean; // unaffordable, or another action is in flight
+  label?: string; // overrides the "⌛️ n" button text (e.g. "view job")
 };
 
 export default function ActionCard({
@@ -26,7 +20,9 @@ export default function ActionCard({
   value,
   cost,
   goal,
-  cards,
+  busy,
+  disabled,
+  label,
 }: ActionCardProps) {
   return (
     <div className={styles.card}>
@@ -35,14 +31,14 @@ export default function ActionCard({
       {value && <p className={styles.value}>{value}</p>}
       {cost && <p className={styles.cost}>{cost}</p>}
 
-      {goal && (
+      {goal > 0 && (
         <button
-          className={cards[title].clicked ? styles.goalBox2 : styles.goalBox}
-          onClick={(e) => {
-            sendOnClick(title);
-          }}
+          className={styles.goalBox}
+          style={disabled && !busy ? { opacity: 0.4 } : undefined}
+          disabled={disabled}
+          onClick={() => sendOnClick(title)}
         >
-          🎯 <span>{goal}</span>
+          {busy ? "…" : label ? label : <>⌛️ <span>{goal}</span></>}
         </button>
       )}
     </div>

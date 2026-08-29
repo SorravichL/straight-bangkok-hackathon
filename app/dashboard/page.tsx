@@ -2,10 +2,13 @@
 import styles from "./dashboard.module.css"
 import DonutChart from "@/app/components/DonutChart"
 import Link from "next/link";
+import { useState } from "react";
 import { useGame } from "../context/GameProvider";
+import LeaderboardModal from "@/app/components/LeaderboardModal";
 
 export default function Dashboard() {
      const { player, formatLargeNumber } = useGame();
+     const [showLeaderboard, setShowLeaderboard] = useState(false);
     return (
     <div className="w-full">
         <div className={styles.wrapper}>
@@ -58,9 +61,16 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <Link href="/assets"><button className={styles.button}>View my assets</button></Link>
+      <div className="flex flex-col items-center gap-2">
+        <Link href="/assets"><button className={styles.button}>View my assets</button></Link>
+        <button className={styles.button} onClick={() => setShowLeaderboard(true)}>
+          🏆 Leaderboard
+        </button>
+      </div>
     </div>
+
+    {showLeaderboard && <LeaderboardModal onClose={() => setShowLeaderboard(false)} />}
     </div>
-      
+
     );
   }

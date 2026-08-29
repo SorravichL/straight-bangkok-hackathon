@@ -60,3 +60,43 @@
   border-radius: 8px;
   cursor: pointer;
 }
+
+/* Age · job · time, always on ONE line. */
+.statusRow {
+  display: flex;
+  /* Never let a long job title push the time onto a second row. */
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+/* .status_bar centres itself with auto margins, which would spread the row. */
+.statusRow > * {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Age and time keep their full width; trimmed padding leaves the job more room. */
+.statusRow .status_bar {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 5px 12px;
+}
+
+.jobBar {
+  /* The only item allowed to shrink: long titles clip instead of wrapping. */
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 5px 10px;
+  font-size: 0.85rem;
+  background: #EBECD0;
+  border-radius: 10px;
+  border: 1.5px solid #333;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
