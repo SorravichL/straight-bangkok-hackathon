@@ -6,9 +6,9 @@ import CandlestickChart, {
 } from "../components/CandlestickChart";
 import TabBook from "../components/tabBook";
 
-type ChartRange = "3m" | "6m" | "1yr" | "all";
+type ChartRange = "1m" | "3m" | "1yr" | "all";
 
-const DEFAULT_CHART_DATA = "/graph/chart_20260829T050733.csv";
+const DEFAULT_CHART_DATA = "/graph/stock/Nvidia 20-26.csv";
 
 export default function InvestmentPage() {
   type Category = "Crypto" | "Stock" | "Government Bond" | "Lottery";
@@ -20,6 +20,9 @@ export default function InvestmentPage() {
   const [chartRange, setChartRange] = useState<ChartRange>("all");
   const [chartData, setChartData] = useState<ChartDataset | null>(null);
   const [chartError, setChartError] = useState<string | null>(null);
+  
+  // CHANGED: Tracking days instead of months. 1825 days = 5 years (60 months)
+  const [replayDaysBack, setReplayDaysBack] = useState(200);
 
   const investments: Record<Category, any[]> = {
     Crypto: [
@@ -115,17 +118,46 @@ export default function InvestmentPage() {
     };
   }, []);
 
-  const periodCandles = useMemo(() => {
-    if (!chartData) return [];
-    if (chartRange === "all") return chartData.candles;
+  useEffect(() => {
+    if (!chartData) return;
+    setReplayDaysBack(1825); // Reset to 5 years back on load
+  }, [chartData]);
 
-    const months = chartRange === "3m" ? 3 : chartRange === "6m" ? 6 : 12;
-    const lastDate = chartData.candles.at(-1)?.date;
+  useEffect(() => {
+    if (!chartData || replayDaysBack === 0) return;
+
+    // CHANGED: Update every 1 second (1000ms) instead of 10 seconds
+    const replayTimer = window.setTimeout(() => {
+      setReplayDaysBack((daysBack) => Math.max(0, daysBack - 1));
+    }, 1000);
+
+    return () => window.clearTimeout(replayTimer);
+  }, [chartData, replayDaysBack]);
+
+  const replayCandles = useMemo(() => {
+    if (!chartData) return [];
+    const latestDate = chartData.candles.at(-1)?.date;
+    if (!latestDate || replayDaysBack === 0) return chartData.candles;
+
+    const simulatedEndDate = new Date(latestDate);
+    // CHANGED: Subtract days instead of months
+    simulatedEndDate.setDate(simulatedEndDate.getDate() - replayDaysBack);
+    return chartData.candles.filter((candle) => candle.date <= simulatedEndDate);
+  }, [chartData, replayDaysBack]);
+
+  const periodCandles = useMemo(() => {
+    if (!replayCandles.length) return [];
+    if (chartRange === "all") return replayCandles;
+
+    const months = chartRange === "1m" ? 1 : chartRange === "3m" ? 3 : 12;
+    const lastDate = replayCandles.at(-1)?.date;
     if (!lastDate) return [];
     const periodStart = new Date(lastDate);
     periodStart.setMonth(periodStart.getMonth() - months);
-    return chartData.candles.filter((candle) => candle.date >= periodStart);
-  }, [chartData, chartRange]);
+    return replayCandles.filter((candle) => candle.date >= periodStart);
+  }, [replayCandles, chartRange]);
+
+  const replayEndDate = replayCandles.at(-1)?.date;
 
   async function importChart(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -136,6 +168,7 @@ export default function InvestmentPage() {
       const data = parseChartCsv(await file.text());
       setChartData(data);
       setChartRange("all");
+      setReplayDaysBack(1825); // Reset simulation
       setChartError(null);
     } catch (error) {
       setChartError(
@@ -164,55 +197,55 @@ export default function InvestmentPage() {
         ""
       )}
       {isHelp && (
-  <div className="flex flex-col fixed left-[50%] top-[50%] z-50 
+        <div className="flex flex-col fixed left-[50%] top-[50%] z-50 
                   translate-x-[-50%] translate-y-[-50%] shadow-lg 
                   w-4/5 max-h-[70vh] rounded-2xl border-2 border-[#b6b885] 
                   bg-white px-4 py-4 items-center gap-2 text-base 
                   overflow-y-auto">
 
-    <h2 className="font-semibold text-center text-3xl mb-2">
-      Guide On Investment
-    </h2>
+          <h2 className="font-semibold text-center text-3xl mb-2">
+            Guide On Investment
+          </h2>
 
-    <p className="text-sm leading-5">
-      <strong>1. Know Your Goals:</strong> Are you saving for retirement, a home, or short-term gains? 
-      Understanding your objective helps guide your strategy.
-    </p>
-    <p className="text-sm leading-5">
-      <strong>2. Research & Diversify:</strong> Look at a company’s financial health, market trends, 
-      and don’t put all your money in one place. Spread out risk across different stocks, bonds, 
-      or funds.
-    </p>
-    <p className="text-sm leading-5">
-      <strong>3. Consider Risk Tolerance:</strong> If you prefer stability, stick to lower-volatility 
-      investments like bonds or established companies. If you can handle swings, growth stocks or 
-      emerging markets might fit.
-    </p>
-    <p className="text-sm leading-5">
-      <strong>4. Think Long-Term:</strong> Markets rise and fall daily. Historically, patient 
-      investors who hold quality assets tend to see better results over years, not days.
-    </p>
-    <p className="text-sm leading-5">
-      <strong>5. Keep Emotions in Check:</strong> Avoid panic-selling on dips or chasing quick 
-      profits. A disciplined approach often outperforms emotional decisions.
-    </p>
-    <p className="text-sm leading-5">
-      <strong>6. Monitor & Adjust:</strong> Review your portfolio regularly. Rebalance if one 
-      investment becomes too large a portion or if your goals change.
-    </p>
-    <p className="text-sm leading-5 mb-3">
-      <em>Tip:</em> Always invest money you can afford to leave invested for a while, and 
-      consider seeking professional advice for complex decisions.
-    </p>
+          <p className="text-sm leading-5">
+            <strong>1. Know Your Goals:</strong> Are you saving for retirement, a home, or short-term gains? 
+            Understanding your objective helps guide your strategy.
+          </p>
+          <p className="text-sm leading-5">
+            <strong>2. Research & Diversify:</strong> Look at a company’s financial health, market trends, 
+            and don’t put all your money in one place. Spread out risk across different stocks, bonds, 
+            or funds.
+          </p>
+          <p className="text-sm leading-5">
+            <strong>3. Consider Risk Tolerance:</strong> If you prefer stability, stick to lower-volatility 
+            investments like bonds or established companies. If you can handle swings, growth stocks or 
+            emerging markets might fit.
+          </p>
+          <p className="text-sm leading-5">
+            <strong>4. Think Long-Term:</strong> Markets rise and fall daily. Historically, patient 
+            investors who hold quality assets tend to see better results over years, not days.
+          </p>
+          <p className="text-sm leading-5">
+            <strong>5. Keep Emotions in Check:</strong> Avoid panic-selling on dips or chasing quick 
+            profits. A disciplined approach often outperforms emotional decisions.
+          </p>
+          <p className="text-sm leading-5">
+            <strong>6. Monitor & Adjust:</strong> Review your portfolio regularly. Rebalance if one 
+            investment becomes too large a portion or if your goals change.
+          </p>
+          <p className="text-sm leading-5 mb-3">
+            <em>Tip:</em> Always invest money you can afford to leave invested for a while, and 
+            consider seeking professional advice for complex decisions.
+          </p>
 
-    <button
-      onClick={() => setIsHelp(false)}
-      className="rounded-full border-2 border-black bg-[#b6b885] px-6 py-1.5"
-    >
-      Ok
-    </button>
-  </div>
-)}
+          <button
+            onClick={() => setIsHelp(false)}
+            className="rounded-full border-2 border-black bg-[#b6b885] px-6 py-1.5"
+          >
+            Ok
+          </button>
+        </div>
+      )}
       <img
         src="investSign/investSign.png"
         alt="Invest Sign"
@@ -266,20 +299,7 @@ export default function InvestmentPage() {
 
       <div className="relative mb-4 mt-2 w-full rounded-lg bg-white p-2 shadow-sm">
         <div className="mb-2 flex items-center justify-between gap-2 px-1">
-          {/* <div>
-            <p className="text-sm font-bold text-slate-900">
-              {investments[selectedTab][selectedInvestment].symbol}
-            </p>
-          </div>
-          <label className="cursor-pointer rounded-full border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-slate-100">
-            <input
-              type="file"
-              accept=".csv,text/csv"
-              onChange={importChart}
-              className="sr-only"
-            />
-            Import CSV
-          </label> */}
+          {/* <label .../> omitted for brevity as per your code */}
         </div>
         <div className="w-full">
           {chartData ? (
@@ -294,6 +314,14 @@ export default function InvestmentPage() {
             </div>
           )}
         </div>
+        {replayEndDate && (
+          <p className="mt-1 px-1 text-[10px] text-slate-500">
+            {replayDaysBack > 0
+              // CHANGED: Added day display to the local string so the user sees the daily updates
+              ? `Market replay · through ${replayEndDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} · next day in 1 second`
+              : "Market replay complete · showing the most recent data"}
+          </p>
+        )}
       </div>
       <TabBook>
         <div className="book p-4 bg-white rounded-l-xl w-full flex flex-col items-center">
@@ -301,20 +329,20 @@ export default function InvestmentPage() {
             <div className="flex space-x-2 mb-2 items-center text-sm">
               Range
               <button
-                onClick={() => setChartRange("3m")}
+                onClick={() => setChartRange("1m")}
                 className={`ml-1 rounded-xl border px-2 py-1 ${
+                  chartRange === "1m" ? "border-slate-900 bg-[#B6B885]" : "bg-white"
+                }`}
+              >
+                1m
+              </button>
+              <button
+                onClick={() => setChartRange("3m")}
+                className={`rounded-xl border px-2 py-1 ${
                   chartRange === "3m" ? "border-slate-900 bg-[#B6B885]" : "bg-white"
                 }`}
               >
                 3m
-              </button>
-              <button
-                onClick={() => setChartRange("6m")}
-                className={`rounded-xl border px-2 py-1 ${
-                  chartRange === "6m" ? "border-slate-900 bg-[#B6B885]" : "bg-white"
-                }`}
-              >
-                6m
               </button>
               <button
                 onClick={() => setChartRange("1yr")}
