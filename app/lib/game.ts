@@ -71,6 +71,12 @@ export const USERNAME_PATTERN = /^[a-zA-Z0-9]+#\d{4}$/;
 export const SERVERS = ["Server 1", "Server 2", "Server 3"] as const;
 
 /**
+ * Everyone shares one room, so the homepage no longer asks. The column and the
+ * (username, server) uniqueness stay, in case servers come back later.
+ */
+export const DEFAULT_SERVER: (typeof SERVERS)[number] = "Server 1";
+
+/**
  * Combined ranking score:
  *   happiness * 0.5 + (netWorth / 1000) * 0.5
  * where netWorth = cash + assets - debt.

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getSupabase } from "@/app/lib/supabase";
 import { jsonError } from "@/app/lib/api";
 import { loadClock, loadPlayer } from "@/app/lib/players";
-import { SERVERS, USERNAME_PATTERN, type PlayerRow } from "@/app/lib/game";
+import { DEFAULT_SERVER, SERVERS, USERNAME_PATTERN, type PlayerRow } from "@/app/lib/game";
 import startData from "@/app/data/startData.json";
 
 /**
@@ -23,7 +23,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Body must be JSON" }, { status: 400 });
   }
 
-  const { username, server } = (body ?? {}) as { username?: string; server?: string };
+  const { username } = (body ?? {}) as { username?: string; server?: string };
+  // The homepage no longer asks for a server; fall back to the shared room.
+  const server = (body as { server?: string })?.server ?? DEFAULT_SERVER;
 
   if (typeof username !== "string" || !USERNAME_PATTERN.test(username)) {
     return NextResponse.json(

@@ -8,11 +8,11 @@ export type Job = {
   salary: number;
 };
 
-/** No job yet: a year of living costs with nothing coming in. */
+/** No job yet. Working and Overtime are simply unavailable — see hasJob(). */
 export const UNEMPLOYED: Job = {
   title: "Unemployed",
   minKnowledge: 0,
-  salary: -20_000,
+  salary: 0,
 };
 
 export const JOBS: Job[] = [
@@ -41,6 +41,11 @@ export function money(amount: number): string {
   return magnitude >= 1000
     ? `${sign}$${Math.round(magnitude / 1000)}K`
     : `${sign}$${magnitude}`;
+}
+
+/** False while the player is Unemployed, which gates Working and Overtime. */
+export function hasJob(occupation: string): boolean {
+  return JOBS.some((job) => job.title === occupation);
 }
 
 export function canTake(job: Job, knowledge: number): boolean {
