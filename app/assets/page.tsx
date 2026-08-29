@@ -18,7 +18,7 @@ export default function Assets() {
       imageUrl: "pic/willow.png",
     },
     {
-      name: "BYD Yangwang U9",
+      name: "Toyota Vios",
       price: "$130,000",
       change: "(+4.75%)",
       imageUrl: "pic/byd.png",
