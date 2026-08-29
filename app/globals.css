@@ -37,8 +37,10 @@ body {
 }
 
 .mobile-container {
-  width: 393px;
+  /* 393px on a desktop, but never wider than the phone it's on. */
+  width: min(393px, 100vw);
   min-height: 100vh;
+  min-height: 100dvh;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
