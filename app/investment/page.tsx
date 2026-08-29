@@ -1,149 +1,140 @@
 "use client";
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CandlestickChart, {
   ChartDataset,
+  formatChartPrice,
   parseChartCsv,
 } from "../components/CandlestickChart";
 import TabBook from "../components/tabBook";
 
 type ChartRange = "1m" | "3m" | "1yr" | "all";
+type Category = "Crypto" | "Stock" | "Government Bond";
 
-const DEFAULT_CHART_DATA = "/graph/stock/Nvidia 20-26.csv";
+type Investment = {
+  title: string;
+  symbol: string;
+  chartPath: string;
+};
+
+const investments: Record<Category, Investment[]> = {
+  Crypto: [
+    {
+      title: "Bitcoin",
+      symbol: "BTC",
+      chartPath: "/graph/crypto/Bitcoin-price-USD.csv",
+    },
+  ],
+  Stock: [
+    {
+      title: "NVIDIA Corporation",
+      symbol: "NVDA",
+      chartPath: "/graph/stock/Nvidia 20-26.csv",
+    },
+    {
+      title: "Walmart Inc.",
+      symbol: "WMT",
+      chartPath: "/graph/stock/Walmart 20-26.csv",
+    },
+    {
+      title: "Visa Inc.",
+      symbol: "V",
+      chartPath: "/graph/stock/VISA 20-26.csv",
+    },
+    {
+      title: "S&P 500 Index",
+      symbol: "S&P 500",
+      chartPath: "/graph/stock/S&P500 20-26.csv",
+    },
+  ],
+  "Government Bond": [
+    {
+      title: "5-Year Government Bond Yield",
+      symbol: "US 5Y",
+      chartPath: "/graph/bond/5 year government bond.csv",
+    },
+  ],
+};
+
+const chartPaths = Object.values(investments)
+  .flat()
+  .map((investment) => investment.chartPath);
 
 export default function InvestmentPage() {
-  type Category = "Crypto" | "Stock" | "Government Bond" | "Lottery";
   const [shares, setShares] = useState(10);
   const [selectedTab, setSelectedTab] = useState<Category>("Stock");
   const [selectedInvestment, setSelectedInvestment] = useState<number>(0);
   const [isPop, setIsPop] = useState<boolean>(false);
   const [isHelp, setIsHelp] = useState<boolean>(false);
   const [chartRange, setChartRange] = useState<ChartRange>("all");
-  const [chartData, setChartData] = useState<ChartDataset | null>(null);
+  const [chartData, setChartData] = useState<Record<string, ChartDataset>>({});
   const [chartError, setChartError] = useState<string | null>(null);
-  
-  // CHANGED: Tracking days instead of months. 1825 days = 5 years (60 months)
   const [replayDaysBack, setReplayDaysBack] = useState(200);
-
-  const investments: Record<Category, any[]> = {
-    Crypto: [
-      {
-        imageUrl: "graph/stock1.png",
-        title: "SKBD Coin",
-        symbol: "SKBD",
-        price: 30,
-      },
-      {
-        imageUrl: "graph/stock2.png",
-        title: "SGMA Coin",
-        symbol: "SGMA",
-        price: 67,
-      },
-      {
-        imageUrl: "graph/stock3.png",
-        title: "DIGE Coin",
-        symbol: "DIGE",
-        price: 120,
-      },
-    ],
-    Stock: [
-      {
-        imageUrl: "graph/stock1.png",
-        title: "NVIDI Corp (High Risk)",
-        symbol: "NVDI",
-        price: 109,
-      },
-      {
-        imageUrl: "graph/stock2.png",
-        title: "J.K.Mogging (Moderate Risk)",
-        symbol: "JKM",
-        price: 130,
-      },
-      {
-        imageUrl: "graph/stock3.png",
-        title: "Nikola Inc (Low Risk)",
-        symbol: "NKLA",
-        price: 70,
-      },
-      {
-        imageUrl: "graph/stock1.png",
-        title: "SnP 50 (Mutual Funds)",
-        symbol: "SNP",
-        price: 200,
-      },
-    ],
-    "Government Bond": [
-      {
-        imageUrl: "graph/stock2.png",
-        title: "Yield to Maturity 5 Year",
-        symbol: "GOVT YTM 5",
-        price: 1000,
-      },
-      {
-        imageUrl: "graph/stock3.png",
-        title: "Yield to Maturity 10 Year",
-        symbol: "GOVT YTM 10",
-        price: 1000,
-      },
-    ],
-    Lottery: [
-      {
-        imageUrl: "graph/stock1.png",
-        title: "Lottery",
-        price: 5,
-      },
-    ],
-  };
 
   useEffect(() => {
     let isCurrent = true;
 
-    async function loadDefaultChart() {
+    async function loadChartData() {
       try {
-        const response = await fetch(DEFAULT_CHART_DATA);
-        if (!response.ok) throw new Error("The bundled chart CSV could not be loaded.");
-        const data = parseChartCsv(await response.text());
-        if (isCurrent) setChartData(data);
+        const loadedData = await Promise.all(
+          chartPaths.map(async (chartPath) => {
+            const response = await fetch(chartPath);
+            if (!response.ok) throw new Error(`Could not load ${chartPath}.`);
+            return [chartPath, parseChartCsv(await response.text())] as const;
+          }),
+        );
+        if (isCurrent) setChartData(Object.fromEntries(loadedData));
       } catch (error) {
         if (isCurrent) {
           setChartError(
-            error instanceof Error ? error.message : "The chart data could not be loaded."
+            error instanceof Error ? error.message : "The chart data could not be loaded.",
           );
         }
       }
     }
 
-    void loadDefaultChart();
+    void loadChartData();
     return () => {
       isCurrent = false;
     };
   }, []);
 
-  useEffect(() => {
-    if (!chartData) return;
-    setReplayDaysBack(1825); // Reset to 5 years back on load
+  const sharedLatestDate = useMemo(() => {
+    const latestDates = Object.values(chartData)
+      .map((dataset) => dataset.candles.at(-1)?.date)
+      .filter((date): date is Date => Boolean(date));
+    if (latestDates.length !== chartPaths.length) return null;
+    return new Date(Math.min(...latestDates.map((date) => date.valueOf())));
   }, [chartData]);
 
   useEffect(() => {
-    if (!chartData || replayDaysBack === 0) return;
+    if (!sharedLatestDate) return;
+    setReplayDaysBack(1825);
+  }, [sharedLatestDate]);
 
-    // CHANGED: Update every 1 second (1000ms) instead of 10 seconds
+  useEffect(() => {
+    if (!sharedLatestDate || replayDaysBack === 0) return;
+
     const replayTimer = window.setTimeout(() => {
       setReplayDaysBack((daysBack) => Math.max(0, daysBack - 1));
     }, 1000);
 
     return () => window.clearTimeout(replayTimer);
-  }, [chartData, replayDaysBack]);
+  }, [sharedLatestDate, replayDaysBack]);
+
+  const replayDate = useMemo(() => {
+    if (!sharedLatestDate) return null;
+    const date = new Date(sharedLatestDate);
+    date.setDate(date.getDate() - replayDaysBack);
+    return date;
+  }, [sharedLatestDate, replayDaysBack]);
+
+  const selectedInvestmentData = investments[selectedTab][selectedInvestment];
+  const selectedChartData = chartData[selectedInvestmentData.chartPath] ?? null;
 
   const replayCandles = useMemo(() => {
-    if (!chartData) return [];
-    const latestDate = chartData.candles.at(-1)?.date;
-    if (!latestDate || replayDaysBack === 0) return chartData.candles;
-
-    const simulatedEndDate = new Date(latestDate);
-    // CHANGED: Subtract days instead of months
-    simulatedEndDate.setDate(simulatedEndDate.getDate() - replayDaysBack);
-    return chartData.candles.filter((candle) => candle.date <= simulatedEndDate);
-  }, [chartData, replayDaysBack]);
+    if (!selectedChartData || !replayDate) return [];
+    return selectedChartData.candles.filter((candle) => candle.date <= replayDate);
+  }, [selectedChartData, replayDate]);
 
   const periodCandles = useMemo(() => {
     if (!replayCandles.length) return [];
@@ -158,24 +149,7 @@ export default function InvestmentPage() {
   }, [replayCandles, chartRange]);
 
   const replayEndDate = replayCandles.at(-1)?.date;
-
-  async function importChart(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-
-    try {
-      const data = parseChartCsv(await file.text());
-      setChartData(data);
-      setChartRange("all");
-      setReplayDaysBack(1825); // Reset simulation
-      setChartError(null);
-    } catch (error) {
-      setChartError(
-        error instanceof Error ? error.message : "That CSV could not be imported."
-      );
-    }
-  }
+  const selectedPrice = replayCandles.at(-1)?.close ?? null;
 
   return (
     <div className="text-black p-3 flex flex-col items-center">
@@ -185,7 +159,7 @@ export default function InvestmentPage() {
             {selectedTab} Bought
           </h2>
           You've bought {shares} of{" "}
-          {investments[selectedTab][selectedInvestment].symbol}
+          {selectedInvestmentData.symbol}
           <button
             onClick={() => setIsPop(false)}
             className="rounded-full border-2 border-black bg-[#b6b885] px-6 py-1.5"
@@ -302,11 +276,12 @@ export default function InvestmentPage() {
           {/* <label .../> omitted for brevity as per your code */}
         </div>
         <div className="w-full">
-          {chartData ? (
+          {selectedChartData ? (
             <CandlestickChart
               candles={periodCandles}
-              hasOhlc={chartData.hasOhlc}
-              symbol={investments[selectedTab][selectedInvestment].symbol}
+              hasOhlc={selectedChartData.hasOhlc}
+              symbol={selectedInvestmentData.symbol}
+              displayEndDate={replayDate ?? undefined}
             />
           ) : (
             <div className="flex h-full items-center justify-center rounded bg-slate-950 px-6 text-center text-sm text-slate-300">
@@ -314,14 +289,13 @@ export default function InvestmentPage() {
             </div>
           )}
         </div>
-        {replayEndDate && (
+        {/* {replayEndDate && (
           <p className="mt-1 px-1 text-[10px] text-slate-500">
             {replayDaysBack > 0
-              // CHANGED: Added day display to the local string so the user sees the daily updates
-              ? `Market replay · through ${replayEndDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} · next day in 1 second`
+              ? `Shared market replay · ${replayDate?.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} · next day in 1 second`
               : "Market replay complete · showing the most recent data"}
           </p>
-        )}
+        )} */}
       </div>
       <TabBook>
         <div className="book p-4 bg-white rounded-l-xl w-full flex flex-col items-center">
@@ -367,7 +341,7 @@ export default function InvestmentPage() {
                 ([key, value], index) => (
                   <button
                     key={key}
-                    className={`${
+                  className={`${
                       selectedInvestment == index
                         ? `bg-yellow-400`
                         : `bg-[#ffffff]`
@@ -435,7 +409,13 @@ export default function InvestmentPage() {
               </div>
             </div>
           </div>
-          Total: ${shares * investments[selectedTab][selectedInvestment].price}
+          <div className="mt-2 text-center text-sm">
+            <span className="font-semibold">Replay price:</span>{" "}
+            {selectedPrice === null ? "Loading…" : `$${formatChartPrice(selectedPrice)}`}
+          </div>
+          <div className="text-center">
+            Total: ${selectedPrice === null ? "—" : formatChartPrice(shares * selectedPrice)}
+          </div>
           <div className="flex space-x-2 mt-2 justify-center text-2xl">
             <button
               className="bg-green-500 text-[#ffffff] border-black py-2 rounded border-1 font-bold w-[70px]"

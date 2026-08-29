@@ -19,6 +19,7 @@ type CandlestickChartProps = {
   candles: Candle[];
   hasOhlc: boolean;
   symbol: string;
+  displayEndDate?: Date;
 };
 
 // This matches the mobile chart panel's proportions, so the SVG can use its
@@ -59,6 +60,7 @@ export default function CandlestickChart({
   candles,
   hasOhlc,
   symbol,
+  displayEndDate,
 }: CandlestickChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -280,7 +282,7 @@ export default function CandlestickChart({
           fontSize="11"
           textAnchor="end"
         >
-          {dateFormatter.format(latest.date)}
+          {dateFormatter.format(displayEndDate ?? latest.date)}
         </text>
       </svg>
 
