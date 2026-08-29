@@ -5,7 +5,7 @@
  * their effects are resolved on the server against the stored occupation — a
  * client can ask to work, it can't announce what it earned.
  */
-import { findJob, money } from "@/app/lib/jobs";
+import { findJob, hasJob, money } from "@/app/lib/jobs";
 
 export type ActionEffects = {
   money?: number;
@@ -21,6 +21,8 @@ export type ActionCard = {
   effects?: ActionEffects;
   /** Multiplier on the player's salary, for Working and Overtime. */
   salaryMultiplier?: number;
+  /** Unavailable while Unemployed — there is no salary to earn. */
+  requiresJob?: boolean;
   /** Opens the job panel instead of paying out. Free to open; ⌛1 to accept. */
   opensCareers?: boolean;
 };
@@ -28,8 +30,8 @@ export type ActionCard = {
 export const ACTION_CARDS: Record<string, ActionCard> = {
   Study:        { icon: "📚",   points: 1, effects: { knowledge: 1 } },
   "Hire Tutor": { icon: "👩‍🏫", points: 1, effects: { knowledge: 2, money: -15_000 } },
-  Working:      { icon: "💼",   points: 1, salaryMultiplier: 1 },
-  Overtime:     { icon: "🕒",   points: 1, salaryMultiplier: 1.25 },
+  Working:      { icon: "💼",   points: 1, salaryMultiplier: 1, requiresJob: true },
+  Overtime:     { icon: "🕒",   points: 1, salaryMultiplier: 1.25, requiresJob: true },
   Travel:       { icon: "✈️",   points: 1, effects: { happiness: 50, money: -35_000 } },
   // Last: it opens a panel rather than paying out.
   "Find Jobs":  { icon: "🔎",   points: 1, opensCareers: true },
@@ -61,6 +63,8 @@ export function resolveEffects(name: string, occupation: string): Required<Actio
 export function actionValue(name: string, occupation: string): string {
   const card = ACTION_CARDS[name];
   if (card?.salaryMultiplier) {
+    // Nothing to advertise with no job — the card is disabled anyway.
+    if (!hasJob(occupation)) return "No job";
     return money(Math.round(findJob(occupation).salary * card.salaryMultiplier));
   }
   if (card?.opensCareers) return "Change job";

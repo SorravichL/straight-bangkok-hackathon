@@ -4,7 +4,7 @@ import ActionCard from "./../components/ActionCard";
 import { useEffect, useState } from "react";
 import { useGame } from "../context/GameProvider";
 import { ACTION_CARDS, actionCost, actionValue } from "@/app/lib/actions";
-import { findJob, money } from "@/app/lib/jobs";
+import { findJob, hasJob, money } from "@/app/lib/jobs";
 import JobPanel from "@/app/components/JobPanel";
 
 /** mm:ss until the whole room turns a year older. */
@@ -77,6 +77,7 @@ export default function Action() {
   }
 
   const currentJob = findJob(player.occupation);
+  const employed = hasJob(player.occupation);
 
   return (
     <div>
@@ -108,9 +109,14 @@ export default function Action() {
               cost={actionCost(title)}
               goal={card.points}
               busy={busy === title}
-              // "view job" opens for free; everything else needs the ⌛ up front.
+              // "view job" opens for free; everything else needs the ⌛ up front,
+              // and Working / Overtime also need an actual job.
               label={card.opensCareers ? "view job" : undefined}
-              disabled={busy !== null || (!card.opensCareers && card.points > player.points)}
+              disabled={
+                busy !== null ||
+                (!card.opensCareers && card.points > player.points) ||
+                (card.requiresJob === true && !employed)
+              }
               sendOnClick={take}
             />
           ))}

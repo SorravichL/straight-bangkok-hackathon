@@ -3,6 +3,7 @@ import { getSupabase } from "@/app/lib/supabase";
 import { loadClock, loadPlayer } from "@/app/lib/players";
 import { jsonError } from "@/app/lib/api";
 import { ACTION_CARDS, actionPoints, resolveEffects } from "@/app/lib/actions";
+import { hasJob } from "@/app/lib/jobs";
 import type { PlayerRow } from "@/app/lib/game";
 
 /**
@@ -42,6 +43,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     // Read the player first: Working and Overtime pay by occupation.
     const current = await loadPlayer(supabase, id);
     if (!current) return NextResponse.json({ error: "Player not found" }, { status: 404 });
+
+    // Working and Overtime pay a salary, so they need a job to pay it.
+    if (ACTION_CARDS[name].requiresJob && !hasJob(current.occupation)) {
+      return NextResponse.json(
+        { error: "Find a job before you can work" },
+        { status: 409 }
+      );
+    }
 
     const cost = actionPoints(name);
     const effects = resolveEffects(name, current.occupation);

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 // Import your context
 import { useGame } from "../context/GameProvider";
+import { DEFAULT_SERVER } from "@/app/lib/game";
 
 import "./HomePage.css";
 
@@ -12,46 +13,29 @@ export default function HomePage() {
   const router = useRouter();
   const { joinGame } = useGame();
 
-  // State for user’s typed username + server + error messages
+  // State for user’s typed username + error messages
   const [username, setUsername] = useState("");
-  const [server, setServer] = useState("Please Select Server");
   const [error, setError] = useState("");
-  const [serverError, setServerError] = useState("");
   // Kept apart from `error` so a backend failure doesn't read as "bad username".
   const [joinError, setJoinError] = useState("");
   const [isJoining, setIsJoining] = useState(false);
 
   // Called when the user clicks "PLAY"
   const handlePlay = async () => {
-    // We use a flag to check if everything is valid before continuing
-    let isValid = true;
-
     // 1) Validate username format "yourname#XXXX"
     const pattern = /^[a-zA-Z0-9]+#\d{4}$/;
     if (!pattern.test(username)) {
       setError("Please enter a username in the format yourname#1234");
-      isValid = false;
-    } else {
-      setError("");
+      return;
     }
+    setError("");
 
-    // 2) Validate server selection
-    if (server === "Please Select Server") {
-      setServerError("Please select a server before proceeding");
-      isValid = false;
-    } else {
-      setServerError("");
-    }
-
-    // If either check failed, do not continue
-    if (!isValid) return;
-
-    // 3) Everything is valid -> create the player in Supabase (or resume an
-    //    existing run for this name on this server) and load it into context.
+    // 2) Create the player in Supabase (or resume an existing run for this
+    //    name) and load it into context.
     setIsJoining(true);
     setJoinError("");
     try {
-      await joinGame(username, server);
+      await joinGame(username, DEFAULT_SERVER);
     } catch (err) {
       setJoinError(err instanceof Error ? err.message : "Could not start the game");
       return;
@@ -59,7 +43,7 @@ export default function HomePage() {
       setIsJoining(false);
     }
 
-    // 4) Go to the dashboard
+    // 3) Go to the dashboard
     router.push("/dashboard");
   };
 
@@ -85,19 +69,6 @@ export default function HomePage() {
         onChange={(e) => setUsername(e.target.value)}
       />
       {error && <div className="error-message text-red-400">{error}</div>}
-
-      {/* Server Select */}
-      <select
-        className="server-select mt-2 p-2 rounded-lg"
-        value={server}
-        onChange={(e) => setServer(e.target.value)}
-      >
-        <option>Please Select Server</option>
-        <option>Server 1</option>
-        <option>Server 2</option>
-        <option>Server 3</option>
-      </select>
-      {serverError && <div className="error-message text-red-400">{serverError}</div>}
 
       {/* PLAY Button */}
       <button
