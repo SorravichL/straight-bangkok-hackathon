@@ -17,14 +17,14 @@ export default function Expense() {
   const { player, setPlayer, addCosmetic } = useGame();
 
   function parsePrice(price: string): number {
-    // Remove the dollar sign and trim any whitespace.
-    let value = price.replace("$", "").trim();
+    // Remove the dollar sign, commas, and anything after a slash
+    let value = price.replace(/\$|,/g, "").split("/")[0].trim();
 
     // Check for million (M) or thousand (K) notations.
-    if (value.endsWith("M") || value.endsWith("m")) {
+    if (value.toLowerCase().endsWith("m")) {
       const numberPart = parseFloat(value.slice(0, -1));
       return numberPart * 1_000_000;
-    } else if (value.endsWith("K") || value.endsWith("k")) {
+    } else if (value.toLowerCase().endsWith("k")) {
       const numberPart = parseFloat(value.slice(0, -1));
       return numberPart * 1_000;
     } else {
@@ -50,45 +50,50 @@ export default function Expense() {
   const assets: Record<Category, any[]> = {
     House: [
       {
-        imageUrl: "pic/willow.png",
-        title: "Willow Creek Cottage",
-        price: "$1.8M",
-        beds: 3,
-        baths: 2,
-        size: "2,100",
-        address: "14 Lavender Lane, Cotswolds, UK",
-      },
-      {
-        imageUrl: "pic/sunset.png",
-        title: "Sunset Palm Villa",
-        price: "$3.4M",
-        beds: 5,
-        baths: 1,
-        size: "3,000",
-        address: "718 Ocean Breeze Rd, Malibu, CA",
-      },
-      {
-        imageUrl: "pic/skyfloat.png",
-        title: "Sky Float Home",
-        price: "$2.5M",
-        beds: 2,
-        baths: 1,
-        size: "1,000",
-        address: "Balloon District, Paradise Heights",
-      },
-      {
         imageUrl: "pic/rustwood.png",
-        title: "Rustwood Tiny Cabin",
-        price: "$320K",
+        title: "Rustwood Cabin",
+        price: "$125,000",
+        rentPrice: "$6,250/yr",
         beds: 1,
         baths: 1,
         size: "450",
         address: "73 Pinecone Trail, Aspen, CO",
       },
       {
+        imageUrl: "pic/willow.png",
+        title: "Willow Creek",
+        price: "$225,000",
+        rentPrice: "$11,250/yr",
+        beds: 3,
+        baths: 2,
+        size: "2,100",
+        address: "14 Lavender Lane, Cotswolds, UK",
+      },
+      {
+        imageUrl: "pic/skyfloat.png",
+        title: "Sky Float",
+        price: "$450,000",
+        rentPrice: "$22,500/yr",
+        beds: 2,
+        baths: 1,
+        size: "1,000",
+        address: "Balloon District, Paradise Heights",
+      },
+      {
+        imageUrl: "pic/sunset.png",
+        title: "Sunset Villa",
+        price: "$750,000",
+        rentPrice: "$37,500/yr",
+        beds: 5,
+        baths: 1,
+        size: "3,000",
+        address: "718 Ocean Breeze Rd, Malibu, CA",
+      },
+      {
         imageUrl: "pic/baroque.png",
-        title: "Baroque Manor Estate",
-        price: "$8.7M",
+        title: "Baroque Estate",
+        price: "$1,200,000",
+        rentPrice: "$60,000/yr",
         beds: 6,
         baths: 4,
         size: "10,000",
