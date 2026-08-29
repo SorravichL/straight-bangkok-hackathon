@@ -6,6 +6,7 @@ import CandlestickChart, {
   parseChartCsv,
 } from "../components/CandlestickChart";
 import TabBook from "../components/tabBook";
+import { useGame } from "../context/GameProvider";
 
 type ChartRange = "1m" | "3m" | "1yr" | "all";
 type Category = "Crypto" | "Stock" | "Government Bond";
@@ -55,6 +56,8 @@ const investments: Record<Category, Investment[]> = {
   ],
 };
 
+
+
 const chartPaths = Object.values(investments)
   .flat()
   .map((investment) => investment.chartPath);
@@ -69,6 +72,16 @@ export default function InvestmentPage() {
   const [chartData, setChartData] = useState<Record<string, ChartDataset>>({});
   const [chartError, setChartError] = useState<string | null>(null);
   const [replayDaysBack, setReplayDaysBack] = useState(200);
+
+  const { player, setPlayer, addCosmetic } = useGame();
+  
+  // Function to update money
+  function pay(amount: number) {
+    setPlayer((prev) => ({
+      ...prev,
+      money: prev.money - amount,
+    }));
+  }
 
   useEffect(() => {
     let isCurrent = true;
@@ -150,6 +163,7 @@ export default function InvestmentPage() {
 
   const replayEndDate = replayCandles.at(-1)?.date;
   const selectedPrice = replayCandles.at(-1)?.close ?? null;
+  const totalCost = selectedPrice !== null ? shares * selectedPrice : 0;
 
   return (
     <div className="text-black p-3 flex flex-col items-center">
@@ -158,10 +172,14 @@ export default function InvestmentPage() {
           <h2 className="font-semibold text-center text-3xl">
             {selectedTab} Bought
           </h2>
-          You've bought {shares} of{" "}
-          {selectedInvestmentData.symbol}
+          <p className="text-center">
+            You've bought {shares} of {selectedInvestmentData.symbol} for ${formatChartPrice(totalCost)}
+          </p>
           <button
-            onClick={() => setIsPop(false)}
+            onClick={() => {
+              setIsPop(false);
+              pay(totalCost);
+            }}
             className="rounded-full border-2 border-black bg-[#b6b885] px-6 py-1.5"
           >
             Ok
@@ -289,13 +307,6 @@ export default function InvestmentPage() {
             </div>
           )}
         </div>
-        {/* {replayEndDate && (
-          <p className="mt-1 px-1 text-[10px] text-slate-500">
-            {replayDaysBack > 0
-              ? `Shared market replay · ${replayDate?.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} · next day in 1 second`
-              : "Market replay complete · showing the most recent data"}
-          </p>
-        )} */}
       </div>
       <TabBook>
         <div className="book p-4 bg-white rounded-l-xl w-full flex flex-col items-center">
@@ -414,7 +425,7 @@ export default function InvestmentPage() {
             {selectedPrice === null ? "Loading…" : `$${formatChartPrice(selectedPrice)}`}
           </div>
           <div className="text-center">
-            Total: ${selectedPrice === null ? "—" : formatChartPrice(shares * selectedPrice)}
+            Total: ${selectedPrice === null ? "—" : formatChartPrice(totalCost)}
           </div>
           <div className="flex space-x-2 mt-2 justify-center text-2xl">
             <button
