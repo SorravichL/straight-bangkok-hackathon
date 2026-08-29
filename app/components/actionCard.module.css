@@ -1,0 +1,62 @@
+.card {
+  height: 176px;
+  background-color: #d8d8aa;
+  border-radius: 12px;
+  border: 1.5px solid #333;
+  padding: 10px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+}
+
+.icon {
+  font-size: 1.8rem;
+}
+
+.title {
+  font-size: 1.1rem;
+  color: #000;
+}
+
+.value {
+  font-size: 1rem;
+  color: #222;
+}
+
+.cost {
+  font-size: 1rem;
+  color: #e00000;
+}
+
+.goalBox {
+  background: #fdfaf1;
+  width: 80%;
+  border: 2px solid #333;
+  padding: 5px 10px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-size: 0.95rem;
+  margin-top: auto;
+  cursor: pointer;
+}
+
+.goalBox2 {
+  background: #81b64c;
+  width: 80%;
+  border: 2px solid #333;
+  padding: 5px 10px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-size: 0.95rem;
+  margin-top: auto;
+  cursor: pointer;
+}

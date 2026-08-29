@@ -1,0 +1,62 @@
+.card {
+    display: flex;
+    align-items: center;
+    background-color: #e7e9c5;
+    border-radius: 12px;
+    border: 1.5px solid #333;
+    padding: 1rem;
+    max-width: 350px;
+    font-family: sans-serif;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .image {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+  }
+  
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  
+  .name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #000;
+  }
+  
+  .price {
+    color: #d71920;
+    font-weight: bold;
+    font-size: 1rem;
+  }
+  
+  .button {
+    padding: 0.4rem 1rem;
+    border-radius: 10px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    width: fit-content;
+  }
+  
+  .selected {
+    background-color: #dc2626; /* red */
+    color: #fff;
+  }
+  
+  .unselected {
+    background-color: #1e40ff; /* blue */
+    color: #fff;
+  }
+  
+  .happiness {
+    font-size: 0.9rem;
+    color: #444;
+  }
+  

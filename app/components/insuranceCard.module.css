@@ -1,0 +1,57 @@
+.card {
+    display: flex;
+    background-color: #e7e9c5;
+    border-radius: 12px;
+    border: 1.5px solid #333;
+    padding: 1rem;
+    max-width: 500px;
+    align-items: center;
+    font-family: sans-serif;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .image {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+  }
+  
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  
+  .title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #000;
+  }
+  
+  .button {
+    padding: 0.4rem 1rem;
+    border-radius: 10px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    width: fit-content;
+  }
+  
+  .selected {
+    background-color: #dc2626; /* red */
+    color: white;
+  }
+  
+  .unselected {
+    background-color: #1e40ff; /* blue */
+    color: white;
+  }
+  
+  .description {
+    font-size: 0.9rem;
+    color: #c02626;
+    font-weight: 600;
+  }
+  

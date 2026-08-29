@@ -1,0 +1,35 @@
+.card {
+    background-color: #e7e9c5;
+    border-radius: 16px;
+    border: 2px solid #333;
+    padding: 1rem;
+    text-align: center;
+    width: 133px;
+    height: 205px;
+    font-family: sans-serif;
+  }
+  
+  .image {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin-bottom: 0.8rem;
+  }
+  
+  .name {
+    font-size: 14px;
+    margin-bottom: 0.5rem;
+    color: #000;
+  }
+  
+  .price {
+    font-size: 10px;
+    margin-bottom: 0.3rem;
+    color: #222;
+  }
+  
+  .change {
+    font-size: 10px;
+    color: #24b524;
+  }
+  

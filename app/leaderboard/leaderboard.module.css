@@ -1,0 +1,86 @@
+/* app/leaderboard/leaderboard.module.css */
+.container {
+    width: 300px;
+    margin: 2rem auto;
+    background: #f3f0d7;
+    border-radius: 10px;
+    padding: 1rem;
+    font-family: sans-serif;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .title {
+    text-align: center;
+    background: #fefae0;
+    padding: 0.5rem 1rem;
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+  }
+  
+  .tabRow {
+    display: flex;
+    justify-content: space-between;
+    background: #e0dec4;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    overflow: hidden;
+  }
+  
+  .tab {
+    flex: 1;
+    padding: 0.5rem;
+    font-size: 1.2rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+  }
+  
+  .active {
+    background-color: #d0ccaa;
+  }
+  
+  .table {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 600px;         /* ✅ Adjust as needed */
+    overflow-y: auto;          /* ✅ Enable vertical scroll */
+    padding-right: 0.3rem;
+
+    scrollbar-width: none;             /* Firefox */
+    -ms-overflow-style: none;
+  }
+  
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fefae0;
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.95rem;
+  }
+  
+  .highlight {
+    background-color: #d7dbb0;
+    font-weight: bold;
+  }
+  
+  .rank {
+    width: 1.5rem;
+    text-align: right;
+  }
+  
+  .name {
+    flex: 1;
+    text-align: left;
+    margin-left: 0.5rem;
+  }
+  
+  .money {
+    text-align: right;
+    font-weight: 500;
+  }
+  

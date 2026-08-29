@@ -1,0 +1,37 @@
+.book,
+.tabs > div {
+  border: 1px solid black;
+}
+
+.tabs > div {
+  background-color: var(--color-white);
+  border-top-right-radius: var(--radius-xl);
+  border-bottom-right-radius: var(--radius-xl);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tabs > button {
+  border-top-right-radius: var(--radius-xl);
+  border-bottom-right-radius: var(--radius-xl);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tabs > div > p {
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+  text-align: center;
+  font-size: 14px;
+}
+
+.tabs > button > p {
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+  text-align: center;
+  font-size: 14px;
+}
